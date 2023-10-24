@@ -1,0 +1,114 @@
+@font-face {
+  font-family: "ColfaxAI";
+  src: url(https://cdn.openai.com/API/fonts/ColfaxAIRegular.woff2)
+      format("woff2"),
+    url(https://cdn.openai.com/API/fonts/ColfaxAIRegular.woff) format("woff");
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: "ColfaxAI";
+  src: url(https://cdn.openai.com/API/fonts/ColfaxAIBold.woff2) format("woff2"),
+    url(https://cdn.openai.com/API/fonts/ColfaxAIBold.woff) format("woff");
+  font-weight: bold;
+  font-style: normal;
+}
+body,
+input {
+  font-size: 16px;
+  line-height: 24px;
+  color: #353740;
+  font-family: "ColfaxAI", Helvetica, sans-serif;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: left;
+  padding-top: 60px;
+}
+/* Create two equal columns that floats next to each other */
+.column {
+  width: 60%;
+  height: 500px;
+  margin-right: 10px;
+  /*   flex-basis: 50%;
+  padding: 10px; */
+}
+.rcolumn {
+  width: 40%;
+  /*height: 500px;*/
+  margin-right: 10px;
+  /*   flex-basis: 50%;
+  padding: 10px; */
+}
+/* Clear floats after the columns */
+.row {
+  display: flex;
+  clear: both;
+  /* justify-content: center; */
+}
+.container {
+  display: flex;
+  align-items: flex-end;
+  line-height: 50px;
+}
+.icon {
+  height: 50px;
+  width: 50px;
+  border: 1px solid; /* Add "solid" to specify the border style */
+  vertical-align: bottom;
+}
+img {
+  max-width: 250px;
+  max-height: 250px;
+}
+h3 {
+  font-size: 32px;
+  line-height: 50px;
+  font-weight: bold;
+  color: #202123;
+  margin: 0 0 0 5px;
+}
+form {
+  display: flex;
+  flex-direction: column;
+  width: 600px;
+}
+input[type="text"] {
+  padding: 12px 16px;
+  border: 1px solid #10a37f;
+  border-radius: 4px;
+  margin-bottom: 24px;
+}
+::placeholder {
+  color: #8e8ea0;
+  opacity: 1;
+}
+input[type="submit"] {
+  font-size: 16px;
+  padding: 12px 8px;
+  width: 'fit-content';
+  color: #fff;
+  background-color: #10a37f;
+  border: none;
+  border-radius: 4px;
+  text-align: center;
+  cursor: pointer;
+  margin: 5px 5px 5px 5px;
+}
+.result {
+  font-weight: bold;
+  margin-top: 40px;
+}
+input[type="button"]{
+  font-size: 16px;
+  width: 'fit-content';
+  padding: 12px 8px;
+  color: #fff;
+  background-color: #10a37f;
+  border: none;
+  border-radius: 4px;
+  text-align: center;
+  cursor: pointer;
+  margin: 5px 5px 5px 5px;
+}

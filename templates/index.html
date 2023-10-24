@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<head>
+  <title>OpenAI Quickstart</title>
+  <link
+    rel="shortcut icon"
+    href="{{ url_for('static', filename='NAOI.jpg') }}"
+  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}" />
+</head>
+
+<body>
+  
+  <div class="row">
+    <div class="column">
+      <div class="container">
+        <p><img src="{{ url_for('static', filename='NAOI.jpg') }}" class="icon" /></p>
+        <h3>Generative AI For Designing </h3>
+      </div>
+      <form action="/" method="post">
+        <input type="text" name="prompt" placeholder="Your prompt" required />
+        <div class="container">
+          <input type="submit" value="Response" />
+        </div>
+      </form>
+      {% if result %}
+      <form action="/" method="post">
+        <div class="container">
+          <input type="submit" name="action" value="Material?" />
+          <input type="submit" name="action" value="Scale?" />
+          <input type="submit" name="action" value="Generate 3D" />
+          <input type="submit" name="action" value="Save Meshes" />
+          <input type="submit" name="action" value="New Session" />
+        </div>
+      </form>
+      {% endif %}
+
+      {% if result %}
+      <div class="result">{{ result }}</div>
+      {% endif %}
+    </div>
+    <div class="rcolumn">
+      <div>
+        <h4>Upload image</h4>
+        <!-- <p>Show image</p> -->
+    
+        <form method="POST" enctype="multipart/form-data" action="/">
+            <input type="file" id="myFile" name="uploaded-file" accept=".jpg">
+            <input type="submit" name="img_upload" value="Upload">
+        </form>
+      </div>
+      {% if upload_image %}
+      <div>
+        <img src="{{ upload_image }}" alt="uploaded image" />
+      </div>
+      
+      <form action="/" method="post">
+        <div class="container">
+          <input type="submit" name="imaction" value="Generate from image" />
+          <input type="checkbox" name="includeImage" value="includeImgPrompt">
+          <label for="includeImage">Include this image in your prompt (only GPT-4)</label>
+        </div>
+      </form>
+      {% endif %}
+
+      {% if render_3d %}
+      <h4>3D</h4>
+      <p><img src="{{ render_3d }}" alt="object rendering not available"></p>
+      {% endif %}
+    </div>
+  </div>
+</body>
