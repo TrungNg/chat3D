@@ -7,12 +7,30 @@ from flask import Flask, redirect, render_template, request, url_for
 from werkzeug.utils import secure_filename
 
 from utils import Shap_e_TextTo3D
+from langchain.chat_models import ChatOpenAI
+#from langchain.prompts import PromptTemplate
+from langchain.prompts.chat import SystemMessagePromptTemplate, AIMessagePromptTemplate, HumanMessagePromptTemplate, ChatPromptTemplate
+from langchain.chains import LLMChain
+from langchain.memory import ConversationBufferWindowMemory
+from langchain.chains import ConversationChain
 
+memory = ConversationBufferWindowMemory(k=100)
+
+system_template = SystemMessagePromptTemplate.from_template("You are an assistant in 3D modelling")
+
+CONVER_MODEL = "gpt-3.5-turbo"
+llm = ChatOpenAI(
+    model_name=CONVER_MODEL,
+    temperature=0,
+    openai_api_key=os.getenv("OPENAI_API_KEY")
+)
+conversation = ConversationChain(
+    llm=llm,
+    memory=memory
+)
 
 app = Flask(__name__)
 openai.api_key = os.getenv("OPENAI_API_KEY")
-
-CONVER_MODEL = "gpt-3.5-turbo"
 
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -30,40 +48,24 @@ def index():
         global latents
         global all_session
         if request.form.get("action", None) == "Material?":
-            prompt = "What is it usually made of?"
-            response = openai.ChatCompletion.create(
-                model=CONVER_MODEL,
-                messages=[
-                    {"role": "system", "content": "You are an assistant in 3D modelling."},
-                    {"role": "user", "content": prompt}
-                    ]
-                )
-            return redirect(url_for("index", result=response['choices'][0]['message']['content']))
+            user_template = HumanMessagePromptTemplate.from_template("{prompt}")
+            chat_template = ChatPromptTemplate.from_messages([system_template, user_template])
+            response = LLMChain(llm=llm, prompt=chat_template).run({"prompt": "What is it usually made of?"})
+            return redirect(url_for("index", result=response)) #['choices'][0]['message']['content']
         
         elif  request.form.get("action", None) == "Scale?":
-            prompt = "What is its typical length?"
-            response = openai.ChatCompletion.create(
-                model=CONVER_MODEL,
-                messages=[
-                    {"role": "system", "content": "You are an assistant in 3D modelling."},
-                    {"role": "user", "content": prompt}
-                    ]
-                )
-            return redirect(url_for("index", result=response['choices'][0]['message']['content']))
+            user_template = HumanMessagePromptTemplate.from_template("{prompt}")
+            chat_template = ChatPromptTemplate.from_messages([system_template, user_template])
+            response = LLMChain(llm=llm, prompt=chat_template).run({"prompt":"What is its typical length?"})
+            return redirect(url_for("index", result=response)) #['choices'][0]['message']['content']
         
         elif request.form.get("action", None) == "Generate 3D":
-            response = openai.ChatCompletion.create(
-                model=CONVER_MODEL,
-                messages=[
-                    #{"role": "system", "content": "You are an assistant in 3D modelling."},
-                    {"role": "user", "content": generate_3d_prompt(all_session)}
-                    ]
-                )
-            prompt_3d = response['choices'][0]['message']['content']
+            user_template = HumanMessagePromptTemplate.from_template("{prompt}")
+            chat_template = ChatPromptTemplate.from_messages([system_template, user_template])
+            prompt_3d = LLMChain(llm=llm, prompt=chat_template).run({"prompt": generate_3d_prompt(all_session)})
             print(prompt_3d)
             latents = model.gen_from_text(prompt_3d)
-            return redirect(url_for("index", result=response['choices'][0]['message']['content'] + "\n3D model generated!", model_stage=IDLE))
-            #return redirect(url_for("index", result=response['choices'][0]['message']['content'] + "\nWaiting for creating a model and rendering...", model_stage=GENERATING_FROM_TEXT))
+            return redirect(url_for("index", result=prompt_3d + "\n3D model generated!", model_stage=IDLE))
         
         elif request.form.get("action", None) == "Save Meshes":
             model.saveMeshes(latents)
@@ -73,14 +75,12 @@ def index():
             img_file_path = os.path.join(app.config['UPLOAD_FOLDER'], '_.jpg')
             if os.path.exists(render_file_path):
                 os.remove(render_file_path)
-            response = openai.ChatCompletion.create(
-                model=CONVER_MODEL,
-                messages=[
-                    {"role": "system", "content": "You are an assistant in 3D modelling."},
-                    {"role": "user", "content": 'Forget all the above chat and start a fresh session.'}
-                    ]
-                )
-            return redirect(url_for("index", result=response['choices'][0]['message']['content']))
+            user_template = HumanMessagePromptTemplate.from_template("{prompt}")
+            chat_template = ChatPromptTemplate.from_messages([system_template, user_template])
+            response = LLMChain(llm=llm, prompt=chat_template).run({"prompt": 'Forget all the above chat and start a fresh session.'})
+
+            conversation.memory.clear()
+            return redirect(url_for("index", result=response))
         
         elif request.form.get("img_upload") == "Upload":
             # Upload file flask
@@ -97,31 +97,11 @@ def index():
                 print("generating from image")
                 latents = model.gen_from_image(img_file_path)
             return redirect(url_for("index", result="3D model generated from input image!", model_stage=IDLE))
-            #render_template("index.html", result="Waiting for creating a model and rendering...", model_stage=GENERATING_FROM_IMAGE)
 
         else:
             prompt = request.form["prompt"]
-            response = openai.ChatCompletion.create(
-                model=CONVER_MODEL,
-                messages=[
-                    {"role": "system", "content": "You are an assistant in 3D modelling."},
-                    {"role": "user", "content": prompt}
-                    ]
-                )
-            all_session += '\nUser: ' + prompt + '\nAssistant:' + response['choices'][0]['message']['content']
+            conversation.run(prompt)
             return redirect(url_for("index", result=response['choices'][0]['message']['content']))
-
-    # if request.args.get("model_stage") == GENERATING_FROM_TEXT:
-    #     prompt_3d = response['choices'][0]['message']['content']
-    #     print(prompt_3d)
-    #     latents = model.gen_from_text(prompt_3d)
-    #     return redirect(url_for("index", result=response['choices'][0]['message']['content'] + "\n3D model generated!", model_stage=IDLE))
-
-    # if request.args.get("model_stage") == GENERATING_FROM_IMAGE:
-    #     if os.path.exists(img_file_path):
-    #         print("generating from image")
-    #         latents = model.gen_from_image(img_file_path)
-    #     return redirect(url_for("index", result="3D model generated from input image!", model_stage=IDLE))
     
     ifp = None
     rfp = None
@@ -134,13 +114,6 @@ def index():
 
 def generate_3d_prompt(session):
     return """{}\nExtract the most relevant term from your latest response to my most recent prompt and answer with only the term. You can also add any description to your answer if it helps the 3D modelling, such as dimensions and shape ratios, but only the details in your answer""".format(session)
-    
-    #Answer with only the name of one most favorable answer among possible answers.
-    #For example, the expected response to the prompt "what can calculate numerical operations?" is "calculator".
-    #Add description to your answer if it is needed to identify the object/concpet being referred in the answer.
-    #My prommpt: {}""".format(
-    #    prompt #.capitalize()
-    #)
 
 if __name__ == '__main__':
     # run app in debug mode on port 5000
